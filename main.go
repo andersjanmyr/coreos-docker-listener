@@ -47,7 +47,8 @@ func init() {
 		Dial: fakeDial,
 	}
 	client = http.Client{Transport: tr}
-	etcdClient = etcd.NewClient([]string{"http://localhost:4001"})
+	etcdClient = etcd.NewClient([]string{
+		"http://172.17.42.1:4001", "http://localhost:4001"})
 }
 
 func getContainer(id string) ([]byte, error) {
