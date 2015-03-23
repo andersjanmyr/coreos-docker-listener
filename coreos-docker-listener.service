@@ -1,0 +1,25 @@
+[Unit]
+Description=Global service for registering docker containers in etcd
+Requires=docker.service
+After=docker.service
+Requires=etcd.service
+After=etcd.service
+
+[Service]
+User=core
+TimeoutStartSec=0
+KillMode=none
+ExecStartPre=-/usr/bin/docker kill coreos-docker-listener
+ExecStartPre=-/usr/bin/docker rm coreos-docker-listener
+ExecStartPre=/usr/bin/docker pull andersjanmyr/coreos-docker-listener
+ExecStart=/usr/bin/sh -c \
+'/usr/bin/docker run \
+--restart=always \
+--name coreos-docker-listener \
+-v /var/run/docker.sock:/var/run/docker.sock \
+andersjanmyr/coreos-docker-listener'
+ExecStop=-/usr/bin/docker stop coreos-docker-listener
+
+[X-Fleet]
+Global=true
+
