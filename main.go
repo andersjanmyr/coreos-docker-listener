@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
+
+	"github.com/andersjanmyr/awsinfo"
+	"github.com/coreos/go-etcd/etcd"
 )
 
 type Event struct {
@@ -35,7 +38,19 @@ type ContainerId struct {
 	Id string
 }
 
-func getContainer(client http.Client, id string) ([]byte, error) {
+var client http.Client
+var etcdClient *etcd.Client
+var hostname string
+
+func init() {
+	tr := &http.Transport{
+		Dial: fakeDial,
+	}
+	client = http.Client{Transport: tr}
+	etcdClient = etcd.NewClient([]string{"http://localhost:4001"})
+}
+
+func getContainer(id string) ([]byte, error) {
 	res, err := client.Get("http://ignor.ed/containers/" + id + "/json")
 	if err != nil {
 		log.Println(err)
@@ -54,15 +69,14 @@ func getContainer(client http.Client, id string) ([]byte, error) {
 }
 
 func fakeDial(proto, addr string) (conn net.Conn, err error) {
-	fmt.Println(proto, addr)
 	return net.Dial("unix", "/var/run/docker.sock")
 }
 
-func getContainerIds(c http.Client) ([]ContainerId, error) {
-	res, err := c.Get("http://ignor.ed/containers/json")
+func getContainerIds() ([]ContainerId, error) {
+	res, err := client.Get("http://ignor.ed/containers/json")
 	defer res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if res.StatusCode == http.StatusOK {
@@ -78,16 +92,13 @@ func getContainerIds(c http.Client) ([]ContainerId, error) {
 	return nil, err
 }
 
-func registerContainer(client http.Client, id string, event string) error {
-	data, err := getContainer(client, id)
+func registerContainer(id string, event string) error {
+	data, err := getContainer(id)
 
 	var container Container
-	fmt.Printf("%#v\n", string(data))
 	err = json.Unmarshal(data, &container)
 	if err != nil {
 		return err
-	} else {
-		fmt.Printf("%#v\n", container)
 	}
 	if event == "start" {
 		if err := registerInEtcd(id, string(data)); err != nil {
@@ -102,34 +113,59 @@ func registerContainer(client http.Client, id string, event string) error {
 }
 
 func registerInEtcd(id string, data string) error {
-	fmt.Printf("registerInEtcd %v, %v", id, data)
-	return nil
+	log.Printf("registerInEtcd %v", id)
+	key := "/our/machines/" + hostname + "/containers/" + id
+	_, err := etcdClient.Set(key, data, 60)
+	return err
 }
 
 func deregisterFromEtcd(id string) error {
-	fmt.Printf("deregisterFromEtcd %v", id)
+	log.Printf("deregisterFromEtcd %v", id)
+	key := "/our/machines/" + hostname + "/containers/" + id
+	_, err := etcdClient.Delete(key, true)
+	return err
+}
+
+func registerMachine() error {
+	var hostname string
+	info, err := awsinfo.Get()
+	if err != nil {
+		hostname, err = os.Hostname()
+		if err != nil {
+			return err
+		}
+		info = map[string]string{"publicHostname": hostname}
+	} else {
+		hostname = info["publicHostname"]
+	}
+	log.Println("hostname", hostname)
+	data, err := json.Marshal(info)
+	if err != nil {
+		return err
+	}
+	key := "/our/machines/" + hostname + "/awsinfo"
+	log.Printf("registerMachine %v", key)
+	_, err = etcdClient.Set(key, string(data), 600)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func main() {
-	tr := &http.Transport{
-		Dial: fakeDial,
-	}
-	client := http.Client{Transport: tr}
-
-	ids, err := getContainerIds(client)
-	fmt.Printf("%#v %v", ids, err)
+	registerMachine()
+	ids, err := getContainerIds()
 	for _, id := range ids {
-		err := registerContainer(client, id.Id, "start")
+		err := registerContainer(id.Id, "start")
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 	}
 
 	res, err := client.Get("http://ignor.ed/events")
-	fmt.Println(res)
+	log.Println(res)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	defer res.Body.Close()
 
@@ -140,12 +176,12 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			log.Fatal(err)
+			log.Panic(err)
 		}
 
-		fmt.Printf("%#v\n", event)
+		log.Printf("%#v\n", event)
 		if event.Status == "start" || event.Status == "stop" {
-			registerContainer(client, event.Id, event.Status)
+			registerContainer(event.Id, event.Status)
 		}
 	}
 }
