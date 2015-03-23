@@ -18,22 +18,6 @@ type Event struct {
 	Status string `json:"status"`
 }
 
-type Config struct {
-	Hostname string
-}
-
-type NetworkSettings struct {
-	IpAddress   string
-	PortMapping map[string]map[string]string
-}
-
-type Container struct {
-	Id              string
-	Image           string
-	Config          *Config
-	NetworkSettings *NetworkSettings
-}
-
 type ContainerId struct {
 	Id string
 }
@@ -96,8 +80,6 @@ func getContainerIds() ([]ContainerId, error) {
 func registerContainer(id string, event string) error {
 	data, err := getContainer(id)
 
-	var container Container
-	err = json.Unmarshal(data, &container)
 	if err != nil {
 		return err
 	}
