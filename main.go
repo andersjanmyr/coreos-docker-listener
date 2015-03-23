@@ -110,16 +110,15 @@ func deregisterFromEtcd(id string) error {
 }
 
 func registerMachine() error {
-	var hostname string
 	info, err := awsinfo.Get()
 	if err != nil {
 		hostname, err = os.Hostname()
 		if err != nil {
 			return err
 		}
-		info = map[string]string{"publicHostname": hostname}
+		info = map[string]interface{}{"publicHostname": hostname}
 	} else {
-		hostname = info["publicHostname"]
+		hostname = info["publicHostname"].(string)
 	}
 	log.Println("hostname", hostname)
 	data, err := json.Marshal(info)
