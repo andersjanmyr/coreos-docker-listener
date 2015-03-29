@@ -18,7 +18,7 @@ ExecStart=/usr/bin/sh -c \
 --name docker-etcd-bridge \
 --env DOCKER_HOST=%H \
 -v /var/run/docker.sock:/var/run/docker.sock \
-andersjanmyr/docker-etcd-bridge
+andersjanmyr/docker-etcd-bridge'
 ExecStop=-/usr/bin/docker stop docker-etcd-bridge
 
 [X-Fleet]
