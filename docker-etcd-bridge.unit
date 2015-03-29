@@ -9,17 +9,17 @@ After=etcd.service
 User=core
 TimeoutStartSec=0
 KillMode=none
-ExecStartPre=-/usr/bin/docker kill coreos-docker-listener
-ExecStartPre=-/usr/bin/docker rm coreos-docker-listener
-ExecStartPre=/usr/bin/docker pull andersjanmyr/coreos-docker-listener
+ExecStartPre=-/usr/bin/docker kill docker-etcd-bridge
+ExecStartPre=-/usr/bin/docker rm docker-etcd-bridge
+ExecStartPre=/usr/bin/docker pull andersjanmyr/docker-etcd-bridge
 ExecStart=/usr/bin/sh -c \
 '/usr/bin/docker run \
 --restart=always \
---name coreos-docker-listener \
+--name docker-etcd-bridge
 --env DOCKER_HOST=%H \
 -v /var/run/docker.sock:/var/run/docker.sock \
-andersjanmyr/coreos-docker-listener'
-ExecStop=-/usr/bin/docker stop coreos-docker-listener
+andersjanmyr/docker-etcd-bridge
+ExecStop=-/usr/bin/docker stop docker-etcd-bridge
 
 [X-Fleet]
 Global=true

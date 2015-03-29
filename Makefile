@@ -1,5 +1,5 @@
 REGISTRY = andersjanmyr
-NAME = coreos-docker-listener
+NAME = docker-etcd-bridge
 # VERSION will be sent as a parameter: make publish VERSION=1.1.1
 VERSION = development
 IMAGE = $(REGISTRY)/$(NAME)
