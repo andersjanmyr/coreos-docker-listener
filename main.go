@@ -64,7 +64,7 @@ func registerMachine() {
 
 	go func() {
 		for {
-			key := "/our/machines/" + hostname + "/awsinfo"
+			key := "/docker/machines/" + hostname + "/awsinfo"
 			log.Printf("registerMachine %v", key)
 			_, err = etcdClient.Set(key, string(data), MACHINE_TTL)
 			if err != nil {
@@ -176,14 +176,14 @@ func getContainer(id string) ([]byte, error) {
 
 func registerInEtcd(id string, data string) error {
 	log.Printf("registerInEtcd %v", id)
-	key := "/our/machines/" + hostname + "/containers/" + id
+	key := "/docker/machines/" + hostname + "/containers/" + id
 	_, err := etcdClient.Set(key, data, CONTAINER_TTL)
 	return err
 }
 
 func deregisterFromEtcd(id string) error {
 	log.Printf("deregisterFromEtcd %v", id)
-	key := "/our/machines/" + hostname + "/containers/" + id
+	key := "/docker/machines/" + hostname + "/containers/" + id
 	_, err := etcdClient.Delete(key, true)
 	return err
 }
