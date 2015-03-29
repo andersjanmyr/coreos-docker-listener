@@ -15,7 +15,7 @@ ExecStartPre=/usr/bin/docker pull andersjanmyr/docker-etcd-bridge
 ExecStart=/usr/bin/sh -c \
 '/usr/bin/docker run \
 --restart=always \
---name docker-etcd-bridge
+--name docker-etcd-bridge \
 --env DOCKER_HOST=%H \
 -v /var/run/docker.sock:/var/run/docker.sock \
 andersjanmyr/docker-etcd-bridge
