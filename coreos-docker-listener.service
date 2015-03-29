@@ -16,6 +16,7 @@ ExecStart=/usr/bin/sh -c \
 '/usr/bin/docker run \
 --restart=always \
 --name coreos-docker-listener \
+--env DOCKER_HOST=%H \
 -v /var/run/docker.sock:/var/run/docker.sock \
 andersjanmyr/coreos-docker-listener'
 ExecStop=-/usr/bin/docker stop coreos-docker-listener

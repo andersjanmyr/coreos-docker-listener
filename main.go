@@ -51,10 +51,7 @@ func main() {
 func registerMachine() {
 	info, err := awsinfo.Get()
 	if err != nil {
-		hostname, err = os.Hostname()
-		if err != nil {
-			log.Panic(err)
-		}
+		hostname = os.Getenv("DOCKER_HOST")
 		info = map[string]interface{}{"publicHostname": hostname}
 	} else {
 		hostname = info["publicHostname"].(string)
